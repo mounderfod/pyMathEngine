@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>pyMathEngine</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"
+    ></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cdn.discordapp.com/attachments/838048982873538572/1131593508759814287/favicon.png"
+    />
+  </head>
+  <body>
+    <div class="m-3">
+      <div class="alert alert-info mb-2" role="alert">
+        Welcome to <b>pyMathEngine</b>, a mathematical engine in the style of
+        Wolfram Alpha. <br />
+        Currently the engine can only take univariate expressions (e.g. \(
+        x^2+2x+3 \)), but additional features are being added over time.<br />
+        Some notes:
+        <ul>
+          <li>Euler's number (\(e\)) is written as "E" in the box</li>
+          <li>Pi (\(\pi\)) is written as "pi" in the box</li>
+        </ul>
+      </div>
+      <div class="input-group mb-3">
+        <input
+          id="expression"
+          type="text"
+          class="form-control"
+          placeholder="Enter a univariate expression..."
+          aria-label="Enter a univariate expression..."
+          aria-describedby="button-addon"
+        />
+        <button
+          class="btn btn-secondary"
+          type="button"
+          onclick="get()"
+          id="button-addon"
+        >
+          Search
+        </button>
+      </div>
+    </div>
+    <div id="response" class="m-5"></div>
+  </body>
+  <script>
+    function get() {
+      let exp = document.getElementById("expression").value;
+      fetch(
+        `https://${"{{ HOSTNAME }}"}/api/univariate?func=${encodeURIComponent(
+          exp
+        )}`
+      )
+        .then((response) => {
+          if (!response.ok) {
+            // create error object and reject if not a 2xx response code
+            let err = new Error("HTTP status code: " + response.status);
+            err.response = response;
+            err.status = response.status;
+            throw err;
+          } else {
+            response.json().then((data) => {
+              console.log(data);
+              let responseBox = document.getElementById("response");
+              responseBox.innerHTML = "";
+              responseBox.innerHTML += `
+              <div class="card mt-2">
+                <div class="card-header">Input</div>
+                <div class="card-body">
+                    <p>$$ f(${data.variable}) = ${data.expression} $$</p>
+                </div>
+              </div>
+
+              <div class="card mt-2">
+                <div class="card-header">Solutions (where \\(f(${data.variable}) = 0\\))</div>
+                <div class="card-body overflow-auto"><p>
+                    $$ ${data.solution} $$ 
+                    </p></div>
+              </div>
+
+              <div class="card mt-2">
+                <div class="card-header">Plot</div>
+                <div class="card-body text-center">
+                    <img src="data:image/png;base64,${data.plot}" />
+                </div>
+              </div>
+
+              <div class="card mt-2">
+                <div class="card-header">Differential</div>
+                <div class="card-body">
+                    <p>$$ \\frac{\\mathrm{d} f(${data.variable}) }{\\mathrm{d} ${data.variable}} = ${data.diff} $$</p>
+                </div>
+              </div>
+
+              <div class="card mt-2">
+                <div class="card-header">Integral</div>
+                <div class="card-body">
+                    <p>$$ \\int f(${data.variable})\\, \\mathrm{d}${data.variable} = ${data.integral} + c$$</p>
+                </div>
+              </div>
+
+              `;
+              MathJax.typeset();
+            });
+          }
+        })
+        .catch((err) => {
+          let responseBox = document.getElementById("response");
+
+          responseBox.innerHTML = "";
+          responseBox.innerHTML += `
+          <div class="card mt-2">
+            <div class="card-header bg-danger text-white">Error</div>
+            <div class="card-body">
+                <p>${err.message}</p>
+                <p>This is likely because you have entered an invalid expression.</p>
+            </div>
+          </div>
+          `;
+        });
+    }
+  </script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        "CommonHTML": { linebreaks: { automatic: true, width: "container" } },
+        "HTML-CSS": { linebreaks: { automatic: true, width: "container" } },
+        "SVG": { linebreaks: { automatic: true, width: "container" } }
+    });
+  </script>
+</html>
