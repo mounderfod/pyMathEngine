@@ -103,7 +103,7 @@
       `;
 
       fetch(
-        `http://${"{{ HOSTNAME }}"}/api/equation?lhs=${encodeURIComponent(
+        `https://${"{{ HOSTNAME }}"}/api/equation?lhs=${encodeURIComponent(
           lhs
         )}&rhs=${encodeURIComponent(rhs)}`
       )
